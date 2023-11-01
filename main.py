@@ -2,29 +2,20 @@ import cv2
 import os
 from draw import draw_image
 from deep_sort_realtime.deepsort_tracker import DeepSort
-from LightClassify import LightClassifier
-from Detector import model
-
+from Model import LightClassifier, Detector
 from Object import Vehicle
 
+# init model
 tracker = DeepSort(max_age=5)
 light_model = LightClassifier()
+detector = Detector()
 
-# Mở video
+# Open video
 cap = cv2.VideoCapture('Data/Videos/CAMERA NGÃ TƯ QUANG TRUNG - NGUYỄN THỊ MINH KHAI trưa 06_06_2021 10h55-12h55.mp4')
 
-frame_rate = 10  # 1 frame per second
+frame_rate = 5  # 1 frame per second
 frame_interval = int(cap.get(cv2.CAP_PROP_FPS) / frame_rate)
-
 frame_count = 0
-
-path_save = 'Data/images'
-# Tạo thư mục để lưu ảnh
-if not os.path.exists(path_save):
-    os.mkdir(path_save)
-
-# Tách video thành các ảnh
-i = 0
 
 road = dict()
 
@@ -38,9 +29,8 @@ while True:
     if frame_count % frame_interval == 0:
 
         status_light = light_model.predict(frame)
-        status_light = 'red'
 
-        result = model(frame)
+        result = detector.model(frame)
         # result.render()
         pd = result.pandas().xyxy[0]
 
@@ -62,7 +52,7 @@ while True:
             if road.get(idx) is None:
                 road[idx] = Vehicle(bounding_box)
 
-            road[idx].update(bounding_box,status_light)
+            road[idx].update(bounding_box, status_light)
             frame = road[idx].draw(frame, idx)
         frame = draw_image(frame, status_light)
 
@@ -73,10 +63,6 @@ while True:
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
         cv2.imshow('video', frame)
-
-# Lưu ảnh
-# cv2.imwrite(f"{path_save}/frame%05d.jpg" % i, frame)
-i += 1
 
 # Đóng video
 cap.release()
